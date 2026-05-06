@@ -9,14 +9,7 @@ import { userRoutes } from './modules/users/users.routes'
 import { caregiverRoutes } from './modules/caregiver/caregiver.routes'
 import { adminRoutes } from './modules/admin/admin.routes'
 
-const server = Fastify({
-  logger: {
-    transport:
-      process.env.NODE_ENV !== 'production'
-        ? { target: 'pino-pretty', options: { colorize: true } }
-        : undefined,
-  },
-})
+const server = Fastify({ logger: true })
 
 // Prisma
 server.register(
