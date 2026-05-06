@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Perfil {
+  usuario
+  cuidador
+  admin
+}
+
+enum FrequenciaMedicamento {
+  diario
+  duasVezesDia
+  tresVezesDia
+  semanalDom
+  semanalSeg
+  semanalTer
+  semanalQua
+  semanalQui
+  semanalSex
+  semanalSab
+  quinzenal
+  mensal
+}
+
+enum IntervaloAlerta {
+  cincoMin
+  dezMin
+  quinzeMin
+  trintaMin
+  umaHora
+}
+
+enum MaximoTentativas {
+  uma
+  duas
+  tres
+  quatro
+  cinco
+}
+
+enum StatusMedicamento {
+  pendente
+  tomado
+  atrasado
+}
+
+model Usuario {
+  id           String    @id @default(cuid())
+  nome         String
+  email        String    @unique
+  telefone     String?
+  senhaHash    String
+  perfil       Perfil    @default(usuario)
+  urlFoto      String?
+  tokenFcm     String?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  deletadoEm   DateTime?
+
+  medicamentos  Medicamento[]
+  eventos       EventoMedicamento[]
+  cuidadorDe    CuidadorIdoso[]   @relation("RelacoesCuidador")
+  idosoDe       CuidadorIdoso[]   @relation("RelacoesIdoso")
+  redefinicoes  RedefinicaoSenha[]
+}
+
+model Medicamento {
+  id               String                @id @default(cuid())
+  usuarioId        String
+  nome             String
+  dose             String
+  horario          String
+  frequencia       FrequenciaMedicamento
+  intervaloAlerta  IntervaloAlerta
+  maximoTentativas MaximoTentativas
+  nomeCuidador     String?
+  telefoneCuidador String?
+  estoqueRestante  Int?
+  ativo            Boolean               @default(true)
+  criadoEm         DateTime              @default(now())
+  atualizadoEm     DateTime              @updatedAt
+
+  usuario  Usuario             @relation(fields: [usuarioId], references: [id])
+  eventos  EventoMedicamento[]
+}
+
+model EventoMedicamento {
+  id            String            @id @default(cuid())
+  medicamentoId String
+  usuarioId     String
+  agendadoEm    DateTime
+  confirmadoEm  DateTime?
+  status        StatusMedicamento @default(pendente)
+  tentativa     Int               @default(1)
+  criadoEm      DateTime          @default(now())
+
+  medicamento  Medicamento @relation(fields: [medicamentoId], references: [id])
+  usuario      Usuario     @relation(fields: [usuarioId], references: [id])
+}
+
+model CuidadorIdoso {
+  id           String   @id @default(cuid())
+  cuidadorId   String
+  idosoId      String
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  cuidador  Usuario @relation("RelacoesCuidador", fields: [cuidadorId], references: [id])
+  idoso     Usuario @relation("RelacoesIdoso", fields: [idosoId], references: [id])
+
+  @@unique([cuidadorId, idosoId])
+}
+
+model RedefinicaoSenha {
+  id        String    @id @default(cuid())
+  usuarioId String
+  codigo    String
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  usuario  Usuario @relation(fields: [usuarioId], references: [id])
+}
