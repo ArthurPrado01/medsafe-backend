@@ -8,6 +8,7 @@ import { medicationRoutes } from './modules/medications/medications.routes'
 import { userRoutes } from './modules/users/users.routes'
 import { caregiverRoutes } from './modules/caregiver/caregiver.routes'
 import { adminRoutes } from './modules/admin/admin.routes'
+import { iniciarScheduler } from './modules/medications/scheduler'
 
 const server = Fastify({ logger: true })
 
@@ -55,6 +56,7 @@ const start = async () => {
   try {
     const port = parseInt(process.env.PORT || '3000')
     await server.listen({ port, host: '0.0.0.0' })
+    iniciarScheduler((server as any).prisma as PrismaClient)
   } catch (err) {
     server.log.error(err)
     process.exit(1)

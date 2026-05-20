@@ -86,6 +86,7 @@ export async function confirmarDose(prisma: PrismaClient, id: string, usuarioId:
   const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate())
   const fimDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1)
 
+  // Verifica se já foi confirmado hoje
   const jaConfirmado = await prisma.eventoMedicamento.findFirst({
     where: {
       medicamentoId: id,
@@ -96,9 +97,7 @@ export async function confirmarDose(prisma: PrismaClient, id: string, usuarioId:
   })
   if (jaConfirmado) throw { statusCode: 409, message: 'Dose já confirmada hoje' }
 
-  const [h, m] = med.horario.split(':').map(Number)
-  const agendadoEm = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), h, m)
-
+  // Decrementa estoque se houver
   if (med.estoqueRestante !== null && med.estoqueRestante > 0) {
     await prisma.medicamento.update({
       where: { id },
@@ -106,12 +105,33 @@ export async function confirmarDose(prisma: PrismaClient, id: string, usuarioId:
     })
   }
 
+  // Tenta atualizar evento pendente/atrasado existente de hoje
+  const eventoHoje = await prisma.eventoMedicamento.findFirst({
+    where: {
+      medicamentoId: id,
+      usuarioId,
+      status: { in: ['pendente', 'atrasado'] },
+      agendadoEm: { gte: inicioDia, lt: fimDia },
+    },
+  })
+
+  if (eventoHoje) {
+    return prisma.eventoMedicamento.update({
+      where: { id: eventoHoje.id },
+      data: { status: 'tomado', confirmadoEm: agora },
+    })
+  }
+
+  // Fallback: cria evento (caso o scheduler ainda não tenha rodado)
+  const [h, m] = med.horario.split(':').map(Number)
+  const agendadoEm = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), h, m)
+
   return prisma.eventoMedicamento.create({
     data: {
       medicamentoId: id,
       usuarioId,
       agendadoEm,
-      confirmadoEm: new Date(),
+      confirmadoEm: agora,
       status: 'tomado',
     },
   })
