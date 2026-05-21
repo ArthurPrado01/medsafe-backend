@@ -1,6 +1,6 @@
 #!/bin/sh
-set -e
+echo "DATABASE_URL defined: $([ -n "$DATABASE_URL" ] && echo YES || echo NO)"
 echo "Running prisma db push..."
 npx prisma db push --accept-data-loss
-echo "Starting server..."
+echo "Prisma push done. Starting server..."
 node dist/server.js
