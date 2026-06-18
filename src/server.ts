@@ -30,6 +30,19 @@ server.register(jwtPlugin, {
 // CORS
 server.register(cors, { origin: true })
 
+// Handler global de erros — evita que validações técnicas do Fastify
+// (em inglês, ex: "body/password must NOT have fewer than 8 characters")
+// cheguem cruas até o usuário final
+server.setErrorHandler((error: any, request, reply) => {
+  if (error.validation) {
+    return reply.status(400).send({ message: 'Dados inválidos. Verifique os campos e tente novamente.' })
+  }
+  request.log.error(error)
+  return reply.status(error.statusCode || 500).send({
+    message: error.message || 'Erro interno do servidor. Tente novamente.',
+  })
+})
+
 // Decorator de autenticação reutilizado em todas as rotas protegidas
 server.decorate('authenticate', async function (request: any, reply: any) {
   try {
