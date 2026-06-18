@@ -64,6 +64,7 @@ export async function esqueceuSenhaService(prisma: PrismaClient, email: string) 
   try {
     await sendPasswordResetEmail(email, usuario.nome, codigo)
   } catch (err) {
+    console.error('Erro ao enviar email de redefinição de senha:', err)
     throw { statusCode: 502, message: 'Não foi possível enviar o e-mail agora. Tente novamente em alguns instantes.' }
   }
 }
