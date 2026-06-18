@@ -61,7 +61,11 @@ export async function esqueceuSenhaService(prisma: PrismaClient, email: string) 
     data: { usuarioId: usuario.id, codigo, expiraEm },
   })
 
-  await sendPasswordResetEmail(email, usuario.nome, codigo)
+  try {
+    await sendPasswordResetEmail(email, usuario.nome, codigo)
+  } catch (err) {
+    throw { statusCode: 502, message: 'Não foi possível enviar o e-mail agora. Tente novamente em alguns instantes.' }
+  }
 }
 
 export async function verificarCodigoService(prisma: PrismaClient, email: string, codigo: string) {

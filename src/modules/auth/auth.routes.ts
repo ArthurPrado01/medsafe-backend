@@ -66,8 +66,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /auth/forgot-password
   fastify.post('/forgot-password', { schema: forgotPasswordSchema }, async (request, reply) => {
     const { email } = request.body as { email: string }
-    await esqueceuSenhaService(fastify.prisma, email)
-    return reply.send({ message: 'Se o email existir, você receberá um código em breve.' })
+    try {
+      await esqueceuSenhaService(fastify.prisma, email)
+      return reply.send({ message: 'Se o email existir, você receberá um código em breve.' })
+    } catch (err: any) {
+      return reply.status(err.statusCode || 500).send({ message: err.message })
+    }
   })
 
   // POST /auth/verify-code
